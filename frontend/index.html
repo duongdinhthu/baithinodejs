@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý sinh viên</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+        }
+        .form-container {
+            margin-bottom: 30px;
+        }
+        .student-list {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">Quản lý sinh viên</h1>
+
+        <!-- Form Thêm sinh viên mới -->
+        <div class="form-container">
+            <h3>Thêm sinh viên mới</h3>
+            <form id="studentForm">
+                <div class="mb-3">
+                    <label for="name" class="form-label">Tên:</label>
+                    <input type="text" class="form-control" id="name" placeholder="Nhập tên sinh viên" required>
+                </div>
+                <div class="mb-3">
+                    <label for="age" class="form-label">Tuổi:</label>
+                    <input type="number" class="form-control" id="age" placeholder="Nhập tuổi" required>
+                </div>
+                <div class="mb-3">
+                    <label for="gender" class="form-label">Giới tính:</label>
+                    <select id="gender" class="form-select" required>
+                        <option value="Male">Nam</option>
+                        <option value="Female">Nữ</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="major" class="form-label">Ngành:</label>
+                    <input type="text" class="form-control" id="major" placeholder="Nhập ngành học" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Thêm sinh viên</button>
+            </form>
+        </div>
+
+        <!-- Danh sách sinh viên -->
+        <div class="student-list">
+            <h3>Danh sách sinh viên</h3>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Tên</th>
+                        <th>Tuổi</th>
+                        <th>Giới tính</th>
+                        <th>Ngành</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="studentList"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api/students';
+
+        // Lấy danh sách sinh viên và hiển thị
+        const getStudents = async () => {
+            const response = await fetch(API_URL);
+            const students = await response.json();
+            const studentList = document.getElementById('studentList');
+            studentList.innerHTML = ''; // Xóa nội dung trước đó
+
+            students.forEach(student => {
+                studentList.innerHTML += `
+                    <tr>
+                        <td>${student.name}</td>
+                        <td>${student.age}</td>
+                        <td>${student.gender}</td>
+                        <td>${student.major}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="editStudent('${student._id}')">Chỉnh sửa</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteStudent('${student._id}')">Xóa</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        };
+
+        // Thêm sinh viên mới
+        document.getElementById('studentForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const age = document.getElementById('age').value;
+            const gender = document.getElementById('gender').value;
+            const major = document.getElementById('major').value;
+
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, age, gender, major })
+            });
+
+            if (response.ok) {
+                alert('Thêm sinh viên thành công!');
+                document.getElementById('studentForm').reset(); // Xóa dữ liệu form
+                getStudents(); // Tải lại danh sách sinh viên
+            } else {
+                alert('Có lỗi xảy ra khi thêm sinh viên.');
+            }
+        });
+
+        // Chỉnh sửa sinh viên
+        const editStudent = async (id) => {
+            const name = prompt('Nhập tên mới:');
+            const age = prompt('Nhập tuổi mới:');
+            const gender = prompt('Nhập giới tính mới (Male hoặc Female):');
+            const major = prompt('Nhập ngành mới:');
+
+            if (name && age && gender && major) {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, age, gender, major })
+                });
+
+                if (response.ok) {
+                    alert('Chỉnh sửa thành công!');
+                    getStudents(); // Tải lại danh sách sinh viên
+                } else {
+                    alert('Có lỗi xảy ra khi chỉnh sửa sinh viên.');
+                }
+            }
+        };
+
+        // Xóa sinh viên
+        const deleteStudent = async (id) => {
+            if (confirm('Bạn có chắc chắn muốn xóa sinh viên này không?')) {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('Xóa sinh viên thành công!');
+                    getStudents(); // Tải lại danh sách sinh viên
+                } else {
+                    alert('Có lỗi xảy ra khi xóa sinh viên.');
+                }
+            }
+        };
+
+        // Gọi hàm để lấy danh sách sinh viên khi tải trang
+        getStudents();
+    </script>
+</body>
+</html>
